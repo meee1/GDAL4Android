@@ -11,6 +11,8 @@ export BUILDDIR=$APP_ROOT/../submodules/build
 # https://developer.android.com/ndk/guides/standalone_toolchain
 # https://developer.android.com/ndk/guides/abis
 
+export MAKEFLAGS="-j 8"
+
 #echo "APP_ROOT" $APP_ROOT
 cd $GDALDIR
 
