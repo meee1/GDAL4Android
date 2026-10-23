@@ -1,59 +1,38 @@
 # GDAL4Android
 Building GDAL as a self-contained *.AAR for Android development.
 
+The aar contains `libgdal.so` (with PROJ and SQLite linked in), the Java binding
+library `libgdalalljni.so`, `libc++_shared.so` and `gdal.jar`, for the `x86`,
+`x86_64`, `armeabi-v7a` and `arm64-v8a` ABIs. All native libraries are linked with
+16 KB page alignment, as required for Android 15+ devices with 16 KB pages and by
+Google Play.
+
 # Requires
-- UNIX OS
-- libtool
-- make
-- ninja
-- ant
-- swig
-- C++ compiler (g++ or clang should work)
-- autoconf (installed by default on Linux, but not OSX)
-- automake (installed by default on Linux, but not OSX)
-- (It's possible I'm missing something, but this is all I found/can think of)
+- Android SDK + NDK r27 or newer
+- JDK 17
+- cmake (>= 3.24), ninja, swig (>= 4), ant, sqlite3, curl, unzip
 
-# How To...
-Clone this repository (make sure to include the --recursive-modules flag!):  
-     `git clone --recurse-submodules https://github.com/paamand/GDAL.git`
+On Ubuntu: `sudo apt-get install ninja-build swig ant sqlite3`
 
-Install Android Studio: https://developer.android.com/studio/install
- - Be sure to install the 32-bit packages it needs if you're on Linux
+# Build
+GDAL, PROJ and SQLite sources are downloaded by the script (versions are set at
+the top of `submodules/install.sh` and can be overridden with `GDAL_VERSION`,
+`PROJ_VERSION`, `SQLITE_VERSION`).
 
-Install Android SDKs:
- - *Android Studio* > *Tools* > *SDK Manager* OR *Android Studio Welcome Screen* > *Configure* > *SDK Manager*
-     - SDK Platforms should have the latest Android API installed - currently 9.0(Pie)
-     - SDK Tools should include:
-         - Android SDK Build-Tools
-         - LLDB
-         - CMake
-         - Android SDK Platform-Tools
-         - Android SDK Tools
-         - NDK
+    cd gdal
+    ../submodules/install.sh <android-ndk-dir> 21
+    cd ..
+    ./gradlew assembleRelease
 
-Get SDK/JDK locations and select the embedded JDK:
- - *Android Studio* > *File* > *Project Structure* OR *Android Studio Welcome Screen* > *Project Defaults* > *Project Structure*
-     - Make sure that `Use embedded JDK` is checked
-     - Write down or copy/paste the `JDK location` and the `Android SDK location`
-         - For me, this was `/home/caleb/.local/share/JetBrains/Toolbox/apps/AndroidStudio/ch-0/182.5264788/jre` and `/home/caleb/Android/Sdk` respectively
+The aar is written to `gdal/build/outputs/aar/gdal-release.aar`.
 
-### Build process
- - Open a terminal and navigate to the project folder, e.g. `~/GDAL/gdal`. Then run the install.sh script with the minSdkVersion and NDK root as arguments:
-`~/GDAL/gdal$ ./../submodules/install.sh ~/Android/Sdk/ndk-bundle 21`.
-     - If this does not run the /submodules/install.sh installation script, jump to the section below.
- - Then open Android Studio 3.0+ and build the normal debug/release types to create the .aar, to be found in: `~/GDAL/gdal/build/outputs/aar/`
-#### If building in Android Studio fails
- - Open a terminal
-     - Navigate to this repository (i.e., `cd ~/GDAL`)
-     - Set these environment variables:
-         - `JAVA_HOME=[Embedded JDK location] && export JAVA_HOME`
-         - `ANDROID_HOME=[Android SDK location] && export ANDROID_HOME`
-     - Navigate to `~/GDAL/gdal` folder and enter the following:
-             - `./../submodules/install.sh "[Android NDK location]" "21" 2>&1 | tee gdal-install.log`
-                 - If this also fails, please share the log file
-             - The NDK location is usually $ANDROID_HOME/ndk-bundle or `~/Android/Sdk/ndk-bundle 21` (OS dependent)
-                - If not, it can be found in the `GDAL/local.properties` file
-     - Run `./gradlew build`
-         - This should produce the gdal-release.aar and gdal-debug.aar files in `GDAL/gdal/build/outputs/aar/`
+`ABIS="arm64-v8a"` can be set to build a subset of ABIs.
 
-The .aar files (gdal-release.aar and gdal-debug.aar) are self-contained with arm-v7s/x86 and arm64/x86_64 compiled libs and java wrappers and can be used directly on other projects. Clean AF.
+The GitHub Actions workflow (`.github/workflows/blank.yml`) runs the same steps,
+checks the 16 KB alignment of every library in the aar, and uploads the aar as a
+build artifact.
+
+Load the libraries at runtime with:
+
+    System.loadLibrary("gdal");
+    System.loadLibrary("gdalalljni");
