@@ -108,8 +108,15 @@ do
         -DEXE_SQLITE3="$SQLITE3"
     "$CMAKE" --build "$OBJDIR/proj" --target install -j "$JOBS"
 
+    # 32-bit Android below API 24 has no 64-bit file offset API (lseek64 etc.),
+    # so GDAL must be told to build without >4GB file support there.
+    EXTRA=()
+    if [ "$MIN_SDK_VERSION" -lt 24 ] && { [ $ABI = x86 ] || [ $ABI = armeabi-v7a ]; }; then
+        EXTRA+=(-DBUILD_WITHOUT_64BIT_OFFSET=ON)
+    fi
+
     # GDAL + Java bindings. Only the bundled (internal) libraries are used.
-    "$CMAKE" -S "$GDALDIR" -B "$OBJDIR/gdal" "${COMMON[@]}" \
+    "$CMAKE" -S "$GDALDIR" -B "$OBJDIR/gdal" "${COMMON[@]}" "${EXTRA[@]}" \
         -DBUILD_SHARED_LIBS=ON -DBUILD_APPS=OFF -DBUILD_TESTING=OFF \
         -DGDAL_USE_EXTERNAL_LIBS=OFF -DGDAL_USE_INTERNAL_LIBS=ON \
         -DPROJ_DIR="$PREFIX/lib/cmake/proj" \
