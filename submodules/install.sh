@@ -135,13 +135,13 @@ do
     mkdir -p "$JNILIBS"
     "$STRIP" --strip-unneeded -o "$JNILIBS/libgdal.so" "$OBJDIR/gdal/libgdal.so"
     "$STRIP" --strip-unneeded -o "$JNILIBS/libgdalalljni.so" "$OBJDIR/gdal/swig/java/libgdalalljni.so"
-    cp "$(ls -d "$NDK_ROOT"/toolchains/llvm/prebuilt/*/sysroot/usr/lib)/$(
+    "$STRIP" --strip-unneeded -o "$JNILIBS/libc++_shared.so" "$(ls -d "$NDK_ROOT"/toolchains/llvm/prebuilt/*/sysroot/usr/lib)/$(
         case $ABI in
             x86) echo i686-linux-android ;;
             x86_64) echo x86_64-linux-android ;;
             armeabi-v7a) echo arm-linux-androideabi ;;
             arm64-v8a) echo aarch64-linux-android ;;
-        esac)/libc++_shared.so" "$JNILIBS/"
+        esac)/libc++_shared.so"
 done
 
 # The jar is architecture independent; take it from the last ABI built.
